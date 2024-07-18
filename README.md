@@ -1,4 +1,1 @@
-# Build My Own **BitTorrent Client** in Go
-
-
-
+# Build My Own **BitTorrent Client** in Go 
