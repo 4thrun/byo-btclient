@@ -9,7 +9,7 @@ import (
 )
 
 // bencodeInfo represents Info Dictionary in Single File Mode
-type bencodeInfo struct {
+type bencodeInfo struct { // TODO: Multiple File Mode to be supported
 	PieceLength int    `bencode:"piece length"`
 	Pieces      []byte `bencode:"pieces"`
 	Private     int    `bencode:"private"` // optional, for PT (Private Tracker)
@@ -60,7 +60,7 @@ func (t *TorrentFile) buildTrackerURL(peerID [20]byte, port uint16) (string, err
 		// "ip": []string{}, // optional, the true IP of the client
 		// "numwant": []string{}, // optional, the number of peers that th client would like to receive from the tracker
 		// "key": []string{}, // optional, an additional identification that is not shared with any other peers
-		// "trackerid": []string{}, // optional, if a previous announce contained a tracker id it should be set here
+		// "trackerid": []string{}, // optional, if a previous `announce` contained a tracker id it should be set here
 	}
 	base.RawQuery = params.Encode()
 	return base.String(), nil
