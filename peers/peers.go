@@ -14,7 +14,7 @@ type Peer struct {
 }
 
 // Unmarshal parses peer IP addresses and ports from a buffer
-func Unmarshal(peersBin []byte) ([]Peer, error) {
+func Unmarshal(peersBin []byte) ([]Peer, error) { // TODO: only works for binary model
 	const peerSize = 6 // 4 for IPv4, 2 for port
 	numPeers := len(peersBin) / peerSize
 	if len(peersBin)%peerSize != 0 {
