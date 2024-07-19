@@ -11,22 +11,25 @@ import (
 // bencodeInfo represents Info Dictionary in Single File Mode
 type bencodeInfo struct { // TODO: Multiple File Mode to be supported
 	PieceLength int    `bencode:"piece length"`
-	Pieces      []byte `bencode:"pieces"`
+	Pieces      string `bencode:"pieces"`
 	Private     int    `bencode:"private"` // optional, for PT (Private Tracker)
-	Name        []byte `bencode:"name"`
+	Name        string `bencode:"name"`
 	Length      int    `bencode:"length"`
-	MD5Sum      []byte `bencode:"md5sum"` // optional
+	MD5Sum      string `bencode:"md5sum"` // optional
 }
 
 // BencodeTorrent represents Bencode format (.torrent format)
 type BencodeTorrent struct {
-	Announce []byte      `bencode:"announce"`
-	Comment  []byte      `bencode:"comment"`
-	Date     int         `bencode:"creation date"`
-	Info     bencodeInfo `bencode:"info"`
+	Info         bencodeInfo `bencode:"info"`
+	Announce     string      `bencode:"announce"`
+	AnnounceList [][]string  `bencode:"announce-list"` // optional
+	Date         int64       `bencode:"creation date"` // optional, in standard UNIX epoch format
+	Comment      string      `bencode:"comment"`       // optional
+	CreatedBy    string      `bencode:"created by"`    // optional
+	Encoding     string      `bencode:"encoding"`      // optional
 }
 
-// TorrentFile represents actual file information
+// TorrentFile represents actual file information we need
 type TorrentFile struct {
 	Announce    []byte
 	InfoHash    [20]byte // SHA-1 hash of the entire bencoded `info` dict
