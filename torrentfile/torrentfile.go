@@ -6,7 +6,8 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"github.com/jackpal/bencode-go"
-	"io"
+	"log"
+	"os"
 )
 
 // bencodeInfo represents Info Dictionary in Single File Mode
@@ -53,7 +54,7 @@ func (i *bencodeInfo) hash() ([20]byte, error) {
 
 // splitHashes returns a list of hashes of pieces
 func (i *bencodeInfo) splitHashes() ([][20]byte, error) {
-	var length int = 20 // length of SHA-1 hash
+	var length = 20 // length of SHA-1 hash
 	buf := []byte(i.Pieces)
 	if len(buf)%length != 0 {
 		return nil, fmt.Errorf("received malformed pieces of length %d", len(buf))
@@ -87,13 +88,22 @@ func (bto *BencodeTorrent) toTorrentFile() (TorrentFile, error) {
 }
 
 // Open parses a torrent file
-func Open(r io.Reader) (*BencodeTorrent, error) {
-	bto := BencodeTorrent{}
-	err := bencode.Unmarshal(r, &bto)
+func Open(path string) (TorrentFile, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return TorrentFile{}, err
 	}
-	return &bto, nil
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Printf("error closing file: %v", file)
+		}
+	}(file)
+	var bto BencodeTorrent
+	err = bencode.Unmarshal(file, &bto)
+	if err != nil {
+		return TorrentFile{}, err
+	}
+	return bto.toTorrentFile()
 }
 
 // DownloadToFile downloads a torrent and writes it to a file
