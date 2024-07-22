@@ -9,7 +9,7 @@ import (
 
 // Peer encodes connection information for a peer
 type Peer struct {
-	IP   net.IP // TODO: currently only IPv4 is supported
+	IP   net.IP // TODO: only IPv4 is supported
 	Port uint16
 }
 
