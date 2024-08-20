@@ -6,7 +6,7 @@ import (
 )
 
 // Handshake represents a special message that a peer uses to identify itself
-type Handshake struct {
+type Handshake struct { // handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
 	PstrLength byte
 	Pstr       string
 	Reserved   [8]byte
