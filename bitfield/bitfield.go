@@ -1,4 +1,4 @@
-package bitfields
+package bitfield
 
 // "bitfield" is one type of message,
 // which is a data structure that peers use to efficiently encode which pieces they are able to send.
@@ -14,13 +14,19 @@ type Bitfield []byte
 // returns true only when 0bxxxxxxx1 &　0b00000001 == 0b00000001
 func (bf Bitfield) HasPiece(index int) bool {
 	byteIndex := index / 8
+	if byteIndex < 0 || byteIndex >= len(bf) {
+		return false
+	}
 	offset := index % 8
-	return bf[byteIndex]>>(7-offset)&1 != 0 // move the specified bit to the last
+	return bf[byteIndex]>>uint(7-offset)&1 != 0 // move the specified bit to the last
 }
 
 // SetPiece sets a bit in the bitfield
 func (bf Bitfield) SetPiece(index int) {
 	byteIndex := index / 8
+	if byteIndex < 0 || byteIndex >= len(bf) { // silently discard invalid bounded index
+		return
+	}
 	offset := index % 8
-	bf[byteIndex] |= 1 << (7 - offset)
+	bf[byteIndex] |= 1 << uint(7-offset)
 }
