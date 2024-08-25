@@ -61,7 +61,6 @@ func (m *Message) Serialize() []byte {
 		return make([]byte, 4)
 	}
 	m.Prefix = uint32(len(m.Payload) + 1) // +1 for <message ID>
-	binary.BigEndian.PutUint32(m.Payload[0:4], m.Prefix)
 	var buf = make([]byte, 4+m.Prefix)
 	binary.BigEndian.PutUint32(buf[0:4], m.Prefix)
 	buf[4] = byte(m.MessageID)
@@ -160,9 +159,8 @@ func (m *Message) name() string {
 }
 
 func (m *Message) String() string {
-	if m == nil {
+	if (m == nil) || (m.Prefix == uint32(0)) {
 		return m.name()
-	} else {
-		return fmt.Sprintf("<message ID> %d (%s), <payload> length %d", m.MessageID, m.name(), len(m.Payload))
 	}
+	return fmt.Sprintf("<message ID> %d (%s), <payload> length %d", m.MessageID, m.name(), len(m.Payload))
 }

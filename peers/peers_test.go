@@ -48,7 +48,7 @@ func TestUnmarshal(t *testing.T) {
 	for _, test := range tests {
 		peer, err := Unmarshal([]byte(test.input))
 		if test.failure {
-			assert.NotNil(t, err)
+			assert.NotNil(t, err) // expected error
 		} else {
 			assert.Nil(t, err)
 		}
