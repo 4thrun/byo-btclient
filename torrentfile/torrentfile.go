@@ -1,6 +1,7 @@
 package torrentfile
 
 import (
+	"bittorrent-client-go/p2p"
 	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
@@ -9,6 +10,8 @@ import (
 	"log"
 	"os"
 )
+
+const Port uint16 = 10688 // default port to listen on
 
 // bencodeInfo represents Info Dictionary in Single File Mode
 type bencodeInfo struct { // TODO: Multiple File Mode to be supported
@@ -109,10 +112,38 @@ func Open(path string) (TorrentFile, error) {
 // DownloadToFile downloads a torrent and writes it to a file
 func (t *TorrentFile) DownloadToFile(path string) error {
 	var peerID [20]byte
-	_, err := rand.Read(peerID[:]) // randomly generated
+	_, err := rand.Read(peerID[:]) // randomly generated peer ID
 	if err != nil {
 		return err
 	}
-	// TODO: to be implemented later
+	peers, err := t.requestPeers(peerID, Port)
+	if err != nil {
+		return err
+	}
+	torrent := p2p.Torrent{
+		Peers:       peers,
+		PeerID:      peerID,
+		InfoHash:    t.InfoHash,
+		PieceHashes: t.PieceHashes,
+		Name:        t.Name,
+		Length:      t.Length,
+		PieceLength: t.PieceLength,
+	}
+	buf, err := torrent.Download()
+	if err != nil {
+		return err
+	}
+	output, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func(output *os.File) {
+		_ = output.Close()
+		return
+	}(output)
+	_, err = output.Write(buf)
+	if err != nil {
+		return err
+	}
 	return nil
 }
