@@ -1,2 +1,5 @@
 # executables
 *.exe
+
+# IDE configurations
+.idea

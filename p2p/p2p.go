@@ -4,7 +4,6 @@ import (
 	"bittorrent-client-go/client"
 	"bittorrent-client-go/message"
 	"bittorrent-client-go/peers"
-	"bittorrent-client-go/torrentfile"
 	"bytes"
 	"crypto/sha1"
 	"fmt"
@@ -22,9 +21,14 @@ const MaxBlockLog int = 5
 
 // Torrent holds data required to download a torrent from a list of peers
 type Torrent struct {
-	Peers  []peers.Peer
-	PeerID [20]byte
-	File   torrentfile.TorrentFile
+	Peers       []peers.Peer
+	PeerID      [20]byte
+	Announce    string
+	InfoHash    [20]byte // SHA-1 hash of the entire bencoded `info` dict
+	PieceHashes [][20]byte
+	PieceLength int
+	Length      int
+	Name        string
 }
 
 type pieceWork struct {
@@ -50,58 +54,39 @@ type pieceProgress struct {
 // Download downloads the .torrent and stores the entire file in memory
 // TODO: do not store the entire file in memory
 func (t *Torrent) Download() ([]byte, error) {
-	log.Printf("starting download for %s\n", t.File.Name)
-	workQueue := make(chan *pieceWork, len(t.File.PieceHashes)) // initialize queues for workers to retrieve work and send results
-	results := make(chan *pieceResult)
-	for index, hash := range t.File.PieceHashes {
+	log.Printf("starting download for %s\n", t.Name)
+	workQueue := make(chan *pieceWork, len(t.PieceHashes)) // initialize queues for workers to retrieve work and send results
+	results := make(chan *pieceResult, 1)
+	for index, hash := range t.PieceHashes {
 		var length = t.calculatePieceSize(index)
-		workQueue <- &pieceWork{
-			index:  index,
-			hash:   hash,
-			length: length,
-		}
+		workQueue <- &pieceWork{index: index, hash: hash, length: length}
 	}
-	defer close(workQueue)
 	for _, peer := range t.Peers {
 		go t.startDownloadWorker(peer, workQueue, results)
 	}
-	var buf = make([]byte, t.File.Length)
+	var buf = make([]byte, t.Length) // collect results into a buffer until full
 	donePieces := 0
-	for donePieces < len(t.File.PieceHashes) {
+	for donePieces < len(t.PieceHashes) {
 		res := <-results
 		begin, end := t.calculateBoundsForPiece(res.index)
 		copy(buf[begin:end], res.buf)
 		donePieces += 1
-		percent := float64(donePieces) / float64(len(t.File.PieceHashes)) * 100
+		percent := float64(donePieces) / float64(len(t.PieceHashes)) * 100
 		numWorkers := runtime.NumGoroutine() - 1 // subtract 1 for main thread
 		log.Printf("(%0.2f%%) downloaded piece #%d from %d peers\n", percent, res.index, numWorkers)
 	}
+	close(workQueue)
 	return buf, nil
 }
 
-func (t *Torrent) calculatePieceSize(index int) int {
-	begin, end := t.calculateBoundsForPiece(index)
-	return end - begin
-}
-
-func (t *Torrent) calculateBoundsForPiece(index int) (begin int, end int) {
-	begin = index * t.File.PieceLength
-	end = begin + t.File.PieceLength
-	if end > t.File.Length {
-		end = t.File.Length
-	}
-	return begin, end
-}
-
 func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork, results chan *pieceResult) {
-	c, err := client.New(peer, t.PeerID, t.File.InfoHash)
+	c, err := client.New(peer, t.PeerID, t.InfoHash)
 	if err != nil {
 		log.Printf("could not complete handshake with %s, disconnecting...\n", peer.IP)
 		return
 	}
 	defer func(Conn net.Conn) {
 		_ = Conn.Close()
-		return
 	}(c.Conn)
 	log.Printf("completed handshake with %s\n", peer.IP)
 	_ = c.SendUnchoke()
@@ -121,13 +106,27 @@ func (t *Torrent) startDownloadWorker(peer peers.Peer, workQueue chan *pieceWork
 		}
 		err = checkIntegrity(pw, buf)
 		if err != nil {
-			log.Printf("iece #%d failed integrity check\n", pw.index)
+			log.Printf("piece #%d failed integrity check\n", pw.index)
 			workQueue <- pw
 			continue
 		}
 		_ = c.SendHave(pw.index)
 		results <- &pieceResult{index: pw.index, buf: buf}
 	}
+}
+
+func (t *Torrent) calculatePieceSize(index int) int {
+	begin, end := t.calculateBoundsForPiece(index)
+	return end - begin
+}
+
+func (t *Torrent) calculateBoundsForPiece(index int) (begin int, end int) {
+	begin = index * t.PieceLength
+	end = begin + t.PieceLength
+	if end > t.Length {
+		end = t.Length
+	}
+	return begin, end
 }
 
 func checkIntegrity(pw *pieceWork, buf []byte) error {
@@ -146,8 +145,7 @@ func attemptDownloadPiece(c *client.Client, pw *pieceWork) ([]byte, error) {
 	}
 	_ = c.Conn.SetDeadline(time.Now().Add(30 * time.Second)) // setting a deadline helps get unresponsive peers unstuck
 	defer func(Conn net.Conn) {                              // 30 seconds is more than enough time to download a 262KB piece
-		_ = Conn.Close()
-		return
+		_ = Conn.SetDeadline(time.Time{}) // disable the deadline
 	}(c.Conn)
 	for state.downloaded < pw.length {
 		if !state.client.ClientInfo.AmChoking { // if choked, send requests until we have enough unfulfilled requests

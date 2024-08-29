@@ -2,6 +2,7 @@ package torrentfile
 
 import (
 	"bittorrent-client-go/peers"
+	"fmt"
 	"github.com/google/go-querystring/query"
 	"github.com/jackpal/bencode-go"
 	"log"
@@ -74,6 +75,9 @@ func (t *TorrentFile) requestPeers(peerID [20]byte, port uint16) ([]peers.Peer, 
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %s", resp.Status)
+	}
 	defer func(resp *http.Response) {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("error closing response body: %v", err)
@@ -84,5 +88,12 @@ func (t *TorrentFile) requestPeers(peerID [20]byte, port uint16) ([]peers.Peer, 
 	if err != nil {
 		return nil, err
 	}
-	return peers.Unmarshal([]byte(trackerResp.Peers))
+	peersBin, err := peers.Unmarshal([]byte(trackerResp.Peers))
+	if err != nil {
+		return nil, err
+	}
+	if len(peersBin) <= 0 {
+		return nil, fmt.Errorf("no peer found")
+	}
+	return peersBin, nil
 }

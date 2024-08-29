@@ -1,7 +1,6 @@
 package torrentfile
 
 import (
-	"bittorrent-client-go/p2p"
 	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
@@ -11,16 +10,14 @@ import (
 	"os"
 )
 
-const Port uint16 = 10688 // default port to listen on
-
 // bencodeInfo represents Info Dictionary in Single File Mode
 type bencodeInfo struct { // TODO: Multiple File Mode to be supported
 	PieceLength int    `bencode:"piece length"`
 	Pieces      string `bencode:"pieces"`
-	Private     int    `bencode:"private"` // optional, for PT (Private Tracker)
-	Name        string `bencode:"name"`
-	Length      int    `bencode:"length"`
-	MD5Sum      string `bencode:"md5sum"` // optional
+	//Private     int    `bencode:"private"` // optional, for PT (Private Tracker)
+	Name   string `bencode:"name"`
+	Length int    `bencode:"length"`
+	//MD5Sum      string `bencode:"md5sum"` // optional
 }
 
 // BencodeTorrent represents Bencode format (.torrent format)
@@ -112,6 +109,7 @@ func Open(path string) (TorrentFile, error) {
 // DownloadToFile downloads a torrent and writes it to a file
 func (t *TorrentFile) DownloadToFile(path string) error {
 	var peerID [20]byte
+<<<<<<< HEAD
 	_, err := rand.Read(peerID[:]) // randomly generated peer ID
 	if err != nil {
 		return err
@@ -139,11 +137,14 @@ func (t *TorrentFile) DownloadToFile(path string) error {
 	}
 	defer func(output *os.File) {
 		_ = output.Close()
-		return
 	}(output)
 	_, err = output.Write(buf)
+=======
+	_, err := rand.Read(peerID[:]) // randomly generated
+>>>>>>> parent of 910f03c (test torrentfile)
 	if err != nil {
 		return err
 	}
+	// TODO: to be implemented later
 	return nil
 }

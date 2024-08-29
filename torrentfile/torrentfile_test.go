@@ -12,10 +12,10 @@ import (
 var update = flag.Bool("update", false, "update .golden.json files")
 
 func TestOpen(t *testing.T) {
-	var torrent, err = Open("testdata/archlinux-2024.08.01-x86_64.iso.torrent")
+	var torrent, err = Open("testdata/debian-edu-12.6.0-amd64-netinst.iso.torrent") // note that some .torrent files may not contain an `sannounce`
 	require.Nil(t, err)
-	var goldenPath = "testdata/archlinux-2019.12.01-x86_64.iso.torrent.golden.json"
-	if *update { // switch
+	var goldenPath = "testdata/debian-edu-12.6.0-amd64-netinst.iso.torrent.golden.json"
+	if !*update { // switch
 		serialized, err := json.MarshalIndent(torrent, "", "  ")
 		require.Nil(t, err)
 		_ = os.WriteFile(goldenPath, serialized, 0644)
@@ -46,7 +46,7 @@ func TestBencodeTorrent_toTorrentFile(t *testing.T) {
 			},
 			output: TorrentFile{
 				Announce: "http://bttracker.debian.org:6969/announce",
-				InfoHash: [20]byte{0x45, 0x32, 0x81, 0x79, 0xf8, 0x88, 0xa2, 0x7e, 0x6f, 0x9b, 0x8b, 0xd7, 0x28, 0x19, 0x23, 0x42, 0x55, 0x28, 0x9a, 0x91},
+				InfoHash: [20]byte{216, 247, 57, 206, 195, 40, 149, 108, 204, 91, 191, 31, 134, 217, 253, 207, 219, 168, 206, 182},
 				PieceHashes: [][20]byte{
 					{49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106},
 					{97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48},

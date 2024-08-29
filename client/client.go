@@ -66,7 +66,6 @@ func completeHandShake(conn net.Conn, infoHash [20]byte, peerID [20]byte) (*hand
 	_ = conn.SetDeadline(time.Now().Add(time.Second * 5))
 	defer func(conn net.Conn, t time.Time) {
 		_ = conn.SetDeadline(t)
-		return
 	}(conn, time.Time{}) // disable the deadline
 	req, err := handshake.New(infoHash, peerID, [8]byte{0, 0, 0, 0, 0, 0, 0, 0})
 	if err != nil {
@@ -94,7 +93,6 @@ func recvBitfield(conn net.Conn) (bitfield.Bitfield, error) {
 	_ = conn.SetDeadline(time.Now().Add(time.Second * 5))
 	defer func(conn net.Conn, t time.Time) {
 		_ = conn.SetDeadline(t)
-		return
 	}(conn, time.Time{}) // disable the deadline
 	msg, err := message.Read(conn)
 	if err != nil {
