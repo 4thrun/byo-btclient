@@ -12,7 +12,7 @@ import (
 var update = flag.Bool("update", false, "update .golden.json files")
 
 func TestOpen(t *testing.T) {
-	var torrent, err = Open("testdata/debian-edu-12.6.0-amd64-netinst.iso.torrent") // note that some .torrent files may not contain an `sannounce`
+	var torrent, err = Open("testdata/debian-edu-12.6.0-amd64-netinst.iso.torrent") // note that some .torrent files may not contain an `announce`
 	require.Nil(t, err)
 	var goldenPath = "testdata/debian-edu-12.6.0-amd64-netinst.iso.torrent.golden.json"
 	if !*update { // switch
